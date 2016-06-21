@@ -1,0 +1,35 @@
+
+/* Los dispositivos móviles con iOS transforman incorrectamente el tamaño de las fuentes */
+body{
+    -webkit-text-size-adjust: auto;
+}
+
+
+html {
+    color: black;
+    font-size: 1em;
+    line-height: 1.4;
+    background-color: #ffffff;
+}
+
+
+h1{
+    margin-top:70px;
+    font-size:45px
+}
+
+html.tiny{
+    background-color:#00a7ff;
+}
+html.small{
+    background-color:#6bed6b;
+}
+html.medium{
+    background-color:#ebf847;
+}
+html.big{
+    background-color:#f89001;
+}
+html.huge{
+    background-color:#d34c24;
+}
