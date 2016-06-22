@@ -96,13 +96,13 @@
         "magic-hide":    {
             "selector": '',
             "elements": null,
-            "init": 'magicHideInit', 
+            "init": 'magicDisplayInit', 
             "update": null
         },
         "magic-show":    {
             "selector": '',
             "elements": null,
-            "init": 'magicShowInit', 
+            "init": 'magicDisplayInit', 
             "update": null
         }
     };
@@ -255,7 +255,7 @@
         watcher.values = values;
     }
 
-    var fillWatcherHasAttr = function( watcher ){
+    var addDisplayClasses = function( watcher ){
         var classes = [], hasAttr, range, element, currentClass;
         for(var i = 0; i<ranges.length; i++){
             range = ranges[i];
@@ -347,15 +347,11 @@
             watcher.element.html(value);
         }        
     }
-    //hide watcher
-    handlers.magicHideInit = function( watcher ){
-        fillWatcherHasAttr( watcher );
+    //show / hide watcher
+    handlers.magicDisplayInit = function( watcher ){
+        addDisplayClasses( watcher );
     }
-    //show watcher
-    handlers.magicShowInit = function( watcher ){
-        fillWatcherHasAttr( watcher );
-    }
-    
+
     
 
     var stretch = function(){
@@ -384,8 +380,6 @@
         $(displayClassesSelector).removeClass(displayClasses); 
         body.css("zoom", "100%");
         html.removeClass(cssClasses);
-
-        //para optimizar, se podrian quitar los hide y show por codigo y hacerlos por estilos, asi al deshabilitar no interfiere, solo con una clase
     };
 
 
