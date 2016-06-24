@@ -64,6 +64,7 @@
     var body = $('body');
     var head = $('head');
     var html = $('html');
+    var wnd = $(window);
     var watchers = [];
     var handlers = {};
     var cssClasses = ""; 
@@ -175,6 +176,7 @@
             $(".resizeMagicBtn." + currentRange.name).addClass("active");
             html.removeClass( cssClasses ).addClass( currentRange.name );
             updateWatchers();
+            wnd.trigger('mediaQuery', $.extend({}, range));
         }
     }
     
@@ -385,7 +387,7 @@
 
     $.fn.responsiveMagic = function( settings ) {
         var defaults = {
-            debug: true		
+            debug: true //TO-DO false o true por defecto?		
         };
 
         options =  $.extend(defaults, settings);	

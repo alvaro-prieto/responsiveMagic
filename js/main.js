@@ -12,6 +12,10 @@ $(function(){
     
     
     $(".viewport").responsiveMagic();
+    $(window).on("mediaQuery", function(event, query){
+        console.log("responsive Change");
+        console.log(query);
+    });
     
     return;
     setTimeout(function(){
