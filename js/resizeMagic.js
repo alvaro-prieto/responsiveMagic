@@ -1,49 +1,30 @@
 /**
-                                      _           __  __             _      
-                                     (_)         |  \/  |           (_)     
-  _ __ ___  ___ _ __   ___  _ __  ___ ___   _____| \  / | __ _  __ _ _  ___ 
+                                      _           __  __             _
+                                     (_)         |  \/  |           (_)
+  _ __ ___  ___ _ __   ___  _ __  ___ ___   _____| \  / | __ _  __ _ _  ___
  | '__/ _ \/ __| '_ \ / _ \| '_ \/ __| \ \ / / _ \ |\/| |/ _` |/ _` | |/ __|
- | | |  __/\__ \ |_) | (_) | | | \__ \ |\ V /  __/ |  | | (_| | (_| | | (__ 
+ | | |  __/\__ \ |_) | (_) | | | \__ \ |\ V /  __/ |  | | (_| | (_| | | (__
  |_|  \___||___/ .__/ \___/|_| |_|___/_| \_/ \___|_|  |_|\__,_|\__, |_|\___|
-               | |                                              __/ |       
-               |_|                                             |___/        
+               | |                                              __/ |
+               |_|                                             |___/
 
  v1.0 - jQuery plugin created by Alvaro Prieto Lauroba.  Licences: MIT & GPL
- 
+
 */
 
 /*
 
    ¿Como me lo imagino?
-   
-   * agrega una clase específica por cada familia de dispositivo:
-        iOS
-        android
-        blackBerry
-        windowsPhone
-        
-    * posibilidades
-        detectar si esta disponible el touch/hover 
-    
-    * agrega una clase por rangos de dimensiones físicas
-        tiny
-        smartphone
-        tablet
-        desktop
-        huge
-        
-    * agrega una clase por orientacion
-        landscape
-        portrait
+
+
 
     * aplica zoom automáticamente y lo expone
         redimensiona el contenido del viewport
         posibilidad de agregar bordes (por resolucion)
         exponer al exterior la posicion del mouse
         posibilidad de multiples contenedores?
-        aplica reglas css para fix de problemas iOS con el zoom
-        modo debug, para previsualizar durante el desarrollo
-        
+
+
 
 
 */
@@ -53,9 +34,9 @@
 
 
 
-(function($){ 	
-    
-      
+(function($){
+
+
     var SIGNATURE = "resizeMagic";
     var INFINITY = 99999;
     var zoom = 1;
@@ -67,11 +48,11 @@
     var wnd = $(window);
     var watchers = [];
     var handlers = {};
-    var cssClasses = ""; 
+    var cssClasses = "";
     var displayClasses = "";
     var displayClassesSelector = "";
     var ranges = [];
-    var currentRangeIndex = -1; 
+    var currentRangeIndex = -1;
     var currentRange = null;
     var options = {};
     var modes = {
@@ -85,31 +66,31 @@
         "magic-src":    {
             "selector": '',
             "elements": null,
-            "init": 'magicSrcInit', 
+            "init": 'magicSrcInit',
             "update": 'magicSrcUpdate'
         },
         "magic-text":    {
             "selector": '',
             "elements": null,
-            "init": 'magicTextInit', 
+            "init": 'magicTextInit',
             "update": 'magicTextUpdate'
         },
         "magic-hide":    {
             "selector": '',
             "elements": null,
-            "init": 'magicDisplayInit', 
+            "init": 'magicDisplayInit',
             "update": null
         },
         "magic-show":    {
             "selector": '',
             "elements": null,
-            "init": 'magicDisplayInit', 
+            "init": 'magicDisplayInit',
             "update": null
         }
     };
     var errors = [
-        "RANGE ERROR: first range must start with 0", // 0  
-        "RANGE ERROR: ranges malformation", // 1  
+        "RANGE ERROR: first range must start with 0", // 0
+        "RANGE ERROR: ranges malformation", // 1
         "RANGE ERROR: at least 2 ranges are needed in order to use this plugin", //2
         "MATCHMEDIA ERROR: your browser does not support matchMedia. Use a polyfill for further compatibility" //3
     ];
@@ -120,7 +101,7 @@
         ".resizeMagicBtn.active": "{background-color:lime; pointer-events:none;}",
         ".resizeMagicBtn:hover": "{background-color:yellow;}"
     };
-    
+
     var createDisplayClasses = function(){
         var hide = [], show = [], hideDefault = [], displayCss = [], displayCssSelector = [];
         var range;
@@ -140,8 +121,8 @@
             hideDefault.join(',') + '{display:none;} '+
             show.join(',') + '{display:initial;}';
     };
-    
-    
+
+
     var setStyles = function(){
         var cssString = "";
         for (var selector in styles) {
@@ -152,23 +133,23 @@
         cssString += createDisplayClasses();
         head.append('<style type="text/css" class="resizeMagicStyles">'+ cssString +'</style>');
     }
-    
-    
+
+
     var detectDevice = function(){
         var ie = navigator.userAgent.indexOf('Trident/4.0')>0;
         console.log("Device: ");
         console.log("Browser: ");
     }
-    
-    
-    
-    
+
+
+
+
     var getCurrentRange = function(){
         var range;
         for(var i = 0; i<ranges.length; i++){
             range = ranges[i];
-            if(range.query.matches) break; 
-        } 
+            if(range.query.matches) break;
+        }
         if(currentRangeIndex != i){
             currentRangeIndex = i;
             currentRange = range;
@@ -179,13 +160,13 @@
             wnd.trigger('mediaQuery', $.extend({}, range));
         }
     }
-    
-    
+
+
     var throwError = function( errorCode ){
-        console.error( errors[ errorCode ] ); 
+        console.error( errors[ errorCode ] );
         return -1;
     }
-    
+
     var initRanges = function(){
         var previousBottom = -1;
         var previousTop = -1;
@@ -214,7 +195,7 @@
                 previousBottom = bottom;
                 previousTop = top;
                 range.query.addListener(getCurrentRange);
-       
+
             }
         }
         if(ranges.length < 2) return throwError(2);
@@ -224,7 +205,7 @@
         lastRange.viewport = bottom;
         return 1;
     }
-    
+
     var findMagicElements = function(){
         //construimos dinámicamente el selector que captura a todos los watchers
         var selector = [], attrName, fullAttrName, range, rangeSelector, group;
@@ -245,8 +226,8 @@
             }
         }
     }
-    
-                
+
+
     var fillWatcherValues = function( watcher ){
         var values = [], value, range;
         for(var i = 0; i<ranges.length; i++){
@@ -280,7 +261,7 @@
                         'type': mc,
                         'element': el,
                         'typeName': attrName,
-                        'nodeType': el.prop('nodeName').toUpperCase()   
+                        'nodeType': el.prop('nodeName').toUpperCase()
                     };
                     handlers[mc.init](watcher);
                     if(mc.update) watchers.push(watcher);
@@ -288,14 +269,14 @@
             }
         }
     }
-    
+
     var updateWatchers = function(){
         var w, update;
         for(var i=0; i<watchers.length; i++){
             w = watchers[i];
             update = w.type.update;
             if(update) handlers[update](w);
-        }  
+        }
     };
 
 
@@ -304,10 +285,10 @@
             var btn, html ="", text, range, debugBar;
             for(var i = 0; i<ranges.length; i++){
                 range =  ranges[i];
-                text = range.name + ' [' + range.bottom + '-' + (range.isLast ? '∞' : range.top) + ']'; 
+                text = range.name + ' [' + range.bottom + '-' + (range.isLast ? '∞' : range.top) + ']';
                 btn = '<button data-range="'+ i +'" class="resizeMagicBtn '+   range.name +'">' + text + '</button>';
                 html += btn;
-            }     
+            }
             debugBar = $('<div class="resizeMagicDebug">');
             debugBar.append(html);
             body.append(debugBar);
@@ -320,12 +301,12 @@
             btn = $(this),
             targetViewport = ranges[ btn.data('range')*1 ].viewport;
         window.open(url,'targetWindow',
-                    'toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width='+ 
+                    'toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width='+
                     targetViewport +',height=600');
     }
-    
-    
-    
+
+
+
     //image watcher
     handlers.magicSrcInit = function( watcher ){
         watcher.default = watcher.element.attr("src");
@@ -347,14 +328,14 @@
             watcher.element.val(value);
         }else{
             watcher.element.html(value);
-        }        
+        }
     }
     //show / hide watcher
     handlers.magicDisplayInit = function( watcher ){
         addDisplayClasses( watcher );
     }
 
-    
+
 
     var stretch = function(){
         var width =  $(window).width() * 1,
@@ -362,24 +343,33 @@
         if(screenWidth != width){
             screenWidth = width;
             viewportWidth  = currentRange.viewport;
-            zoom = 100 * screenWidth / viewportWidth; 
+            zoom = 100 * screenWidth / viewportWidth;
+
+            body.css("transform","scale("+zoom/100 +","+ zoom/100+")");
+            body.css("width", currentRange.viewport);
+            body.css("position","absolute");
+            body.css("transform-origin","0 0 0");
+
+            /*
             body.css("zoom", zoom + "%");
             $.zoom = zoom;
+            */
+            $.zoom = zoom;
         }
-    } 
-    
-    
+    }
+
+
 
 
     $.fn.removeMagic = function() {
         $(window).unbind('resize.' + SIGNATURE);
         for(var i = 0; i<ranges.length; i++){
             ranges[i].query.removeListener(getCurrentRange);
-        } 
+        }
         watchers = ranges = [];
         $(".resizeMagicDebug").remove();
         $(".resizeMagicStyles").remove();
-        $(displayClassesSelector).removeClass(displayClasses); 
+        $(displayClassesSelector).removeClass(displayClasses);
         body.css("zoom", "100%");
         html.removeClass(cssClasses);
     };
@@ -387,30 +377,30 @@
 
     $.fn.responsiveMagic = function( settings ) {
         var defaults = {
-            debug: true //TO-DO false o true por defecto?		
+            debug: true //TO-DO false o true por defecto?
         };
 
-        options =  $.extend(defaults, settings);	
+        options =  $.extend(defaults, settings);
 
         if( !matchMedia ) return throwError(3);
         if( initRanges() > 0){
             setStyles();
             initDebug();
             initWatchers();
-            getCurrentRange();  
+            getCurrentRange();
             $(window).bind('resize.' + SIGNATURE, stretch);
             stretch();
-        } 
+        }
     }
 
 
-    
-  
-     
+
+
+
     // $(window).trigger('exitBreakpoint' + options.breakpoints[x]);
-    
-    //bind resize event, to update grips position 
-    //$(window).bind('resize.'+SIGNATURE, onResize); 
+
+    //bind resize event, to update grips position
+    //$(window).bind('resize.'+SIGNATURE, onResize);
 
 
 })(jQuery);
