@@ -187,13 +187,32 @@
     }
 
 
+    function do_calc () {
+        var px_val = $custom_px.val().replace(/[^0-9.]/g, ''),
+            em_val = $custom_em.val().replace(/[^0-9.]/g, ''),
+            base_val = $custom_base.val().replace(/[^0-9.]/g, '');
+
+        if (base_val && px_val) {
+            $custom_result.text((px_val / base_val).toFixed(3) + 'em');
+        }
+        else if (base_val && em_val) {
+            $custom_result.text(parseInt(em_val * base_val) + 'px');
+        }
+        else {
+            return;
+        }
+    };
+
     var parseRange = function(str){
         str = str.toString();
         var r = str.split(",");
         if(r.length<2) r = str.split(";");
         if(r.length<2) r = str.split(" ");
         if(r.length<2) r = str.split("-");
-        r[0]*=1;r[1]*=1;
+        r[1] = r[1].toLowerCase().indexOf("inf") <0 ? r[1] : INFINITY;
+        r[0]*=1; r[1]*=1;
+        r[0] = r[0] > 2000 ? INFINITY : r[0];
+        r[1] = r[1] > 2000 ? INFINITY : r[1];
         return r;
     }
 
