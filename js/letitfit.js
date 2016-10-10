@@ -195,6 +195,20 @@
     }
 
 
+    var parseRange = function(str){
+        str = str.toString();
+        var r = str.split(",");
+        if(r.length<2) r = str.split(";");
+        if(r.length<2) r = str.split(" ");
+        if(r.length<2) r = str.split("-");
+        r[0]*=1;r[1]*=1;
+        return r;
+    }
+
+    var parseRanges = function(str){
+//AQUI VOUUUU_y
+    }
+
     var init = function(){
         var matching = null,
             attr = '',
@@ -241,6 +255,9 @@
                 });
             }
         });
+
+
+
 
 
         $(window).bind('resize.' + SIGNATURE, stretch);
