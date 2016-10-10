@@ -1,14 +1,16 @@
 /**
-                                      _           __  __             _
-                                     (_)         |  \/  |           (_)
-  _ __ ___  ___ _ __   ___  _ __  ___ ___   _____| \  / | __ _  __ _ _  ___
- | '__/ _ \/ __| '_ \ / _ \| '_ \/ __| \ \ / / _ \ |\/| |/ _` |/ _` | |/ __|
- | | |  __/\__ \ |_) | (_) | | | \__ \ |\ V /  __/ |  | | (_| | (_| | | (__
- |_|  \___||___/ .__/ \___/|_| |_|___/_| \_/ \___|_|  |_|\__,_|\__, |_|\___|
-               | |                                              __/ |
-               |_|                                             |___/
+     _      _   _ _    __ _ _
+    | |    | | (_) |  / _(_) |
+    | | ___| |_ _| |_| |_ _| |_
+    | |/ _ \ __| | __|  _| | __|
+    | |  __/ |_| | |_| | | | |_
+    |_|\___|\__|_|\__|_| |_|\__|
 
- v1.0 - jQuery plugin created by Alvaro Prieto Lauroba.  Licences: MIT & GPL
+    v1.0 - jQuery plugin created by Alvaro Prieto Lauroba.
+
+    License: * free for personal use,
+             * $1 for comercial usages (lifetime license)
+             * I don't earn much money, if you want to donate more than $1 I do really appreciate it :-)
 
 */
 
@@ -43,25 +45,14 @@
 
 (function($){
 
-    var watchRanges = [];
-    var viewport = null;
-    var screenWidth = 0;
-    var body = $('body');
-    var head = $('head');
-    var html = $('html');
-    var wnd = $(window);
-    var watchers = [];
-    var handlers = {};
     var INFINITY = 999999;
     var SIGNATURE = "_letitfit";
 
-    var errors = [
-        "RANGE ERROR: first range must start with 0", // 0
-        "RANGE ERROR: ranges malformation", // 1
-        "RANGE ERROR: at least 2 ranges are needed in order to use this plugin", //2
-        "MATCHMEDIA ERROR: your browser does not support matchMedia. Use a polyfill for further compatibility" //3
-    ];
-
+    var watchRanges = [];
+    var screenWidth = 0;
+    var head = $('head');
+    var html = $('html');
+    var wnd = $(window);
 
 
     var activeRanges = [];
@@ -71,8 +62,10 @@
         var currentRanges = [], range, i, index;
         for(i = 0; i<watchRanges.length; i++){
             range = watchRanges[i];
-            if(range.query.matches) currentRanges.push(range);
-            if(!range.style) createStyle( range );
+            if(range.query.matches){
+                currentRanges.push(range);
+                if(!range.style) createStyle( range );
+            }
         }
         //previously active ranges can be out of scope
         for(i = 0; i<activeRanges.length; i++){
@@ -128,7 +121,6 @@
         $(".resizeMagicDebug").remove();
         $(".resizeMagicStyles").remove();
         $(displayClassesSelector).removeClass(displayClasses);
-        body.css("zoom", "100%");
         html.removeClass(cssClasses);
     };
 
@@ -139,7 +131,7 @@
         };
 
         options =  $.extend(defaults, settings);
-        if( !matchMedia ) return throwError(3);
+
     }
 
 
@@ -206,16 +198,31 @@
     }
 
     var parseRanges = function(str){
-//AQUI VOUUUU_y
+        var ranges = [], range, aux;
+        str = str.toString();
+        aux = str.split("][");
+        for(var i =0; i<aux.length; i++){
+            range = $.trim(aux[i].toString().replace(/\[|\]|\,/g,' '));
+            range = parseRange(range);
+            ranges.push(range);
+        }
+        return ranges;
     }
 
     var init = function(){
+
+        if( !matchMedia ){
+            console.error("MATCHMEDIA ERROR: your browser does not support matchMedia. Use a polyfill for further compatibility");
+            return;
+        }
+
         var matching = null,
             attr = '',
             value,
             range,
             ranges,
             viewport;
+
         $.each(tags, function(tag, tagstr) {
             if(tags.hasOwnProperty(tag)){
                 matching = $('[data-fit-'+ tagstr +']');
@@ -246,26 +253,27 @@
                     }
                     if(ranges === null){
                         //one single range
-                        console.log("sencillo");
                         watch(el, range, viewport);
                     }else{
                         //multiple ranges for one single tag
-                        console.log("multiples");
+                        for(var i = 0; i<ranges.length; i++){
+                            range = ranges[i];
+                            viewport = range[1] == INFINITY ? range[0] : range[1];
+                            watch(el, range, viewport);
+                        }
                     }
                 });
             }
         });
-
-
-
-
-
+        console.log(watchRanges);
         $(window).bind('resize.' + SIGNATURE, stretch);
         stretch();
 
     }
 
-    init();
+    $(function(){
+       init();
+    });
 
 })(jQuery);
 
