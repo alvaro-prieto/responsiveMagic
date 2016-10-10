@@ -47,6 +47,8 @@
 
     var INFINITY = 999999;
     var SIGNATURE = "_letitfit";
+    var PX = "px";
+    var EM = "em";
 
     var watchRanges = [];
     var screenWidth = 0;
@@ -102,7 +104,7 @@
             var dummy = $('<div/>');
             for(var i = 0; i<activeRanges.length; i++){
                 range = activeRanges[i];
-                viewportWidth  = range.viewport;
+                viewportWidth  = range.units == PX ? range.viewport : emToPx(range.viewport);
                 zoom = screenWidth / viewportWidth;
                 dummy.css("transform","scale("+ zoom +","+ zoom +")").css("transform-origin","0 0 0");
                 dummy.css("width", range.viewport).css("position","absolute");
@@ -170,13 +172,19 @@
             top: range[1],
             query: null,
             viewport: viewport,
-            stle: null
+            style: null,
+            units: range.units
         };
-        range.query = window.matchMedia('(min-width: '+ range.bottom +'px) and (max-width: '+ range.top +'px)');
+        range.query = window.matchMedia('(min-width: '+ range.bottom + range.units +') and (max-width: '+ range.top + range.units + ')');
         watchRanges.push(range);
         range.query.addListener(onChangeRange);
     }
 
+
+    var emToPx = function(em) {
+        var font_base = 16;
+        return parseInt(em * font_base);
+    };
 
 
     var generateRangeId = function(){
@@ -187,33 +195,17 @@
     }
 
 
-    function do_calc () {
-        var px_val = $custom_px.val().replace(/[^0-9.]/g, ''),
-            em_val = $custom_em.val().replace(/[^0-9.]/g, ''),
-            base_val = $custom_base.val().replace(/[^0-9.]/g, '');
-
-        if (base_val && px_val) {
-            $custom_result.text((px_val / base_val).toFixed(3) + 'em');
-        }
-        else if (base_val && em_val) {
-            $custom_result.text(parseInt(em_val * base_val) + 'px');
-        }
-        else {
-            return;
-        }
-    };
-
     var parseRange = function(str){
-        str = str.toString();
+        var range = [];
+        str = cleanUnits(str, range);
+        str = str.replace(/\;|\ |\-/g,',');
         var r = str.split(",");
-        if(r.length<2) r = str.split(";");
-        if(r.length<2) r = str.split(" ");
-        if(r.length<2) r = str.split("-");
         r[1] = r[1].toLowerCase().indexOf("inf") <0 ? r[1] : INFINITY;
         r[0]*=1; r[1]*=1;
         r[0] = r[0] > 2000 ? INFINITY : r[0];
         r[1] = r[1] > 2000 ? INFINITY : r[1];
-        return r;
+        range[0]= r[0]; range[1] = r[1];
+        return range;
     }
 
     var parseRanges = function(str){
@@ -226,6 +218,18 @@
             ranges.push(range);
         }
         return ranges;
+    }
+
+
+    var cleanUnits = function(value, range){
+        range.units = PX;  //default;
+        value = value.toString();
+        value = value.replace(/px/g,'');
+        if(value.indexOf(EM)>=0){
+            range.units = EM;
+            value = value.replace(/em/g,'');
+        }
+        return value;
     }
 
     var init = function(){
@@ -254,10 +258,10 @@
                     viewport = null;
                     switch(tag){
                         case tags.under:
-                            viewport = range[1] = value*1;
+                            viewport = range[1] = cleanUnits(value, range)*1;
                             break;
                         case tags.over:
-                            viewport = range[0] = value*1;
+                            viewport = range[0] = cleanUnits(value, range)*1;
                             break;
                         case tags.range:
                             range = parseRange(value);
