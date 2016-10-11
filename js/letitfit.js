@@ -9,69 +9,55 @@
     v1.0 - jQuery plugin created by Alvaro Prieto Lauroba.
 
     License: * free for personal use,
-             * $1 for comercial usages (lifetime license)
-             * I don't earn much money, if you want to donate more than $1 I do really appreciate it :-)
+             * $1 for commercial usages and brands (lifetime license)
+             * Any donation is extremely appreciated, I don't earn much money  :-)
 
 */
-
-/*
-
-   ¿Como me lo imagino?
-
-
-
-    * aplica zoom automáticamente y lo expone
-        redimensiona el contenido del viewport
-        posibilidad de agregar bordes (por resolucion)
-        exponer al exterior la posicion del mouse
-        posibilidad de multiples contenedores?
-
-
-
-
- data-fit-under = "420"
- data-fit-range ="420,580"  //tambien tiene que funcionar con []
- data-fit-ranges = "[420,580][581,700]"
- data-fit-over = "1200"
- data-fit-foundation = "small, large"
-
-
-*/
-
-
-
-
 
 
 (function($){
 
-    var INFINITY = 999999;
-    var SIGNATURE = "_letitfit";
-    var PX = "px";
-    var EM = "em";
+    //const
+    var INFINITY = 999999,
+        SIGNATURE = "_letitfit",
+        PX = "px",
+        EM = "em";
 
-    var activeRanges = [];
-    var watchRanges = [];
-    var screenWidth = 0;
-    var head = $('head');
-    var html = $('html');
-    var body = $('body');
-    var wnd = $(window);
+    //variables
+    var activeRanges = [],  //ranges currently matching a media query
+        watchRanges = [],   //all defined ranges
+        screenWidth = 0;    //last screen size
 
+    //shortcuts
+    var head = $('head'),
+        body = $('body'),
+        wnd = $(window);
+
+    //accepted data-tags
     var tags = {
         under: "under",
         over: "over",
         range: "range",
         ranges: "ranges",
-        foundation: "foundation"
+        foundation: "foundation",
+        bootstrap: "bootstrap"
     };
 
-    var foundation ={
+    //stardard foundation ranges
+    var foundation = {
         small: '[0em,40em]',
         medium: '[40.063em,64em]',
         large: '[64.063em,inf]'
     };
 
+    //standard bootstrap ranges
+    var bootstrap = {
+        xs:'[0,543]',
+        sm:'[544,767]',
+        md:'[768,991]',
+        lg:'[992,1199]',
+        xl:'[1200,inf]'
+    }
 
 
     //this function gets fired everytime a mediaquery matches
@@ -139,7 +125,7 @@
         $(".resizeMagicDebug").remove();
         $(".resizeMagicStyles").remove();
         $(displayClassesSelector).removeClass(displayClasses);
-        html.removeClass(cssClasses);
+        //html.removeClass(cssClasses);
     };
 
     $.fn.responsiveMagic = function( settings ) {
@@ -202,10 +188,10 @@
         str = str.replace(/\;|\ |\-/g,',');
         var r = str.split(",");
         r[1] = r[1].toLowerCase().indexOf("inf") <0 ? r[1] : INFINITY;
-        r[0]*=1; r[1]*=1;
+        r[0] *= 1; r[1] *= 1;
         r[0] = r[0] > 2000 ? INFINITY : r[0];
         r[1] = r[1] > 2000 ? INFINITY : r[1];
-        range[0]= r[0]; range[1] = r[1];
+        range[0] = r[0]; range[1] = r[1];
         return range;
     }
 
@@ -221,16 +207,15 @@
         return ranges;
     }
 
-    var parseFoundationRanges = function(str){
+    var parseFrameworkRanges = function(str, framework){
         str = str.replace(/\ |\[|\]/g,'').toLowerCase();
         var names = str.split(','),
             ranges = [],
             value;
         for(var i=0; i<names.length; i++){
-            value = foundation[names[i]];
+            value = framework[names[i]];
             if(value) ranges.push(value);
         }
-        console.log(ranges);
         return parseRanges( ranges.join() );
     }
 
@@ -246,12 +231,10 @@
     }
 
     var init = function(){
-
         if( !matchMedia ){
             console.error("MATCHMEDIA ERROR: your browser does not support matchMedia. Use a polyfill for further compatibility");
             return;
         }
-
         var matching = null,
             attr = '',
             value,
@@ -284,7 +267,10 @@
                             ranges = parseRanges(value);
                             break;
                         case tags.foundation:
-                            ranges = parseFoundationRanges(value);
+                            ranges = parseFrameworkRanges(value, foundation);
+                            break;
+                        case tags.bootstrap:
+                            ranges = parseFrameworkRanges(value, bootstrap);
                             break;
                     }
                     if(ranges === null){
@@ -305,7 +291,6 @@
         $(window).bind('resize.' + SIGNATURE, stretch);
         onChangeRange();
         stretch();
-
     }
 
     $(function(){
