@@ -50,14 +50,29 @@
     var PX = "px";
     var EM = "em";
 
+    var activeRanges = [];
     var watchRanges = [];
     var screenWidth = 0;
     var head = $('head');
     var html = $('html');
+    var body = $('body');
     var wnd = $(window);
 
+    var tags = {
+        under: "under",
+        over: "over",
+        range: "range",
+        ranges: "ranges",
+        foundation: "foundation"
+    };
 
-    var activeRanges = [];
+    var foundation ={
+        small: '[0em,40em]',
+        medium: '[40.063em,64em]',
+        large: '[64.063em,inf]'
+    };
+
+
 
     //this function gets fired everytime a mediaquery matches
     var onChangeRange = function(){
@@ -95,7 +110,6 @@
     }
 
 
-
     var stretch = function(){
         var width =  $(window).width() * 1,
             viewportWidth, range, zoom;
@@ -114,6 +128,8 @@
     }
 
 
+    //=========================
+
     $.fn.removeMagic = function() {
         $(window).unbind('resize.' + SIGNATURE);
         for(var i = 0; i<ranges.length; i++){
@@ -126,7 +142,6 @@
         html.removeClass(cssClasses);
     };
 
-
     $.fn.responsiveMagic = function( settings ) {
         var defaults = {
             debug: true //TO-DO false o true por defecto?
@@ -135,34 +150,20 @@
         options =  $.extend(defaults, settings);
 
     }
-
-
-
-
-
     // $(window).trigger('exitBreakpoint' + options.breakpoints[x]);
 
     //bind resize event, to update grips position
     //$(window).bind('resize.'+SIGNATURE, onResize);
 
+    //=========================
 
-    var tags = {
-        under: "under",
-        over: "over",
-        range: "range",
-        ranges: "ranges",
-        foundation: "foundation"
-    };
 
-    var foundation ={
-        small: [0,500],
-        medium: [501, 700],
-        large: [701, 99999]
-    };
 
-    var parseFoundationRanges = function(str){
-        return [];
-    }
+
+
+
+
+
 
     var watch = function(element, range, viewport){
         range = {
@@ -182,7 +183,7 @@
 
 
     var emToPx = function(em) {
-        var font_base = 16;
+        var font_base = parseFloat(body.css("font-size"));
         return parseInt(em * font_base);
     };
 
@@ -210,7 +211,7 @@
 
     var parseRanges = function(str){
         var ranges = [], range, aux;
-        str = str.toString();
+        str = str.toString().replace(/\]\,\[/g,'][');
         aux = str.split("][");
         for(var i =0; i<aux.length; i++){
             range = $.trim(aux[i].toString().replace(/\[|\]|\,/g,' '));
@@ -220,6 +221,18 @@
         return ranges;
     }
 
+    var parseFoundationRanges = function(str){
+        str = str.replace(/\ |\[|\]/g,'').toLowerCase();
+        var names = str.split(','),
+            ranges = [],
+            value;
+        for(var i=0; i<names.length; i++){
+            value = foundation[names[i]];
+            if(value) ranges.push(value);
+        }
+        console.log(ranges);
+        return parseRanges( ranges.join() );
+    }
 
     var cleanUnits = function(value, range){
         range.units = PX;  //default;
@@ -290,6 +303,7 @@
         });
         console.log(watchRanges);
         $(window).bind('resize.' + SIGNATURE, stretch);
+        onChangeRange();
         stretch();
 
     }
