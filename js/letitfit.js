@@ -43,6 +43,13 @@
         bootstrap: "bootstrap"
     };
 
+    //sensitivity to height changes
+    var sensitivity = {
+        normal: 1,
+        medium: 2,
+        high: 3
+    }
+
     //stardard foundation ranges
     var foundation = {
         small: '[0em,40em]',
@@ -83,12 +90,13 @@
         range.element.wrap('<div/>');
         range.wrapper = range.element.parent();
         range.active = true;
-        range.mutationObserver.observe(range.element.get(0), {
-            attributes: true,
-            childList: true,
-            characterData: true,
-            subtree: true
-        });
+        if(range.sensitivity == sensitivity.medium)
+            range.mutationObserver.observe(range.element.get(0), {
+                attributes: true,
+                childList: true,
+                characterData: true,
+                subtree: true
+            });
         updateRangeAspectRatio(range);
     }
 
@@ -99,7 +107,8 @@
         range.wrapper = null;
         range.element.removeClass(range.id);
         range.active = false;
-        range.mutationObserver.disconnect();
+        if(range.sensitivity == sensitivity.medium)
+            range.mutationObserver.disconnect();
     }
 
     var onRangeMutation = function(range){
@@ -176,6 +185,7 @@
     var watch = function(element, range, viewport){
         range = {
             id: generateRangeId()+SIGNATURE,
+            active:false,
             element: element,
             bottom: range[0],
             top: range[1],
@@ -187,15 +197,40 @@
             aspectRatio: 0,
             units: range.units,
             mutationObserver: null,
-            active:false
+            heightObserver: null,
+            sensitivity: sensitivity.normal
         };
         range.query = window.matchMedia('(min-width: '+ range.bottom + range.units +') and (max-width: '+ range.top + range.units + ')');
-        range.mutationObserver = new MutationObserver( function(){ onRangeMutation(range) });
-        element.find("img").load( function(){ onRangeMutation(range) });
+        parseSensibility(range);
+        createContentMutationObsever(range);
         watchRanges.push(range);
         range.query.addListener(onChangeRange);
     }
 
+
+    var createContentMutationObsever = function(range){
+        //until ResizeObserver is implemented for modern browsers this is the way to go
+        if(range.sensitivity < sensitivity.high){
+            range.element.find("img").load( function(){ onRangeMutation(range) });
+        }
+        if(range.sensitivity == sensitivity.medium){
+            range.mutationObserver = new MutationObserver( function(){ onRangeMutation(range) });
+        }
+        if(range.sensitivity == sensitivity.high){
+            range.heightObserver = function(){
+                if(range.active){
+                    var ar = range.element.height() / range.width;
+                    if(ar != range.aspectRatio){
+                        range.aspectRatio = ar;
+                        fitRange(range);
+                    }
+                }
+                requestAnimationFrame(range.heightObserver);
+            }
+            range.heightObserver();
+        }
+
+    }
 
 
     var emToPx = function(em) {
@@ -211,6 +246,16 @@
         return "range_" + generateRangeId.nextId++;
     }
 
+    var parseSensibility = function(range){
+        var data = range.element.data("fit-sensitivity");
+        if(data){
+            data = $.trim(data.toString().toLowerCase());
+            switch(data){
+                case "medium" : range.sensitivity = sensitivity.medium; break;
+                case "high" : range.sensitivity = sensitivity.high; break;
+            }
+        }
+    }
 
     var parseRange = function(str){
         var range = [];
@@ -221,7 +266,8 @@
         r[0] *= 1; r[1] *= 1;
         r[0] = r[0] > 2000 ? INFINITY : r[0];
         r[1] = r[1] > 2000 ? INFINITY : r[1];
-        range[0] = r[0]; range[1] = r[1];
+        range[0] = Math.min(r[0], r[1]);
+        range[1] = Math.max(r[0], r[1]);
         return range;
     }
 
@@ -261,8 +307,8 @@
     }
 
     var init = function(){
-        if( !matchMedia ){
-            console.error("MATCHMEDIA ERROR: your browser does not support matchMedia. Use a polyfill for further compatibility");
+        if( typeof matchMedia == 'undefined'){
+            console.warn('MATCHMEDIA ERROR: your browser does not support matchMedia. Use a polyfill for further compatibility');
             return;
         }
         var matching = null,
