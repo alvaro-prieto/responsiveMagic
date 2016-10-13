@@ -68,30 +68,12 @@
             if(range.query.matches){
                 currentRanges.push(range);
                 if(!range.active) onEnterRange( range );
+            }else if(range.active){
+                onQuitRange(range);
             }
-        }  //revissar a ver si es necesario hacer estos dos pases o si con el flag active ya no es necesario
-        //previously active ranges can be out of scope
-        for(i = 0; i<activeRanges.length; i++){
-            range = activeRanges[i];
-            index = $.inArray( range, currentRanges );
-            if(index<0) onQuitRange(range);
         }
         activeRanges = currentRanges;
     }
-
-
-    var mutations = function(range){
-
-        setTimeout(function(){
-            range.element.append("<p>hola</p>");
-        },1500);
-
-        setTimeout(function(){
-            range.element.append("<p>adios</p>");
-        },3500);
-    }
-
-
 
     var onEnterRange = function(range){
         var str = '<style id="' + range.id + '"> </style>';
@@ -107,7 +89,7 @@
             characterData: true,
             subtree: true
         });
-        mutations(range); //fake
+        updateRangeAspectRatio(range);
     }
 
     var onQuitRange = function(range){
@@ -121,10 +103,9 @@
     }
 
     var onRangeMutation = function(range){
-        range.aspectRatio = 0;
         if(range.active){
+            updateRangeAspectRatio(range);
             fitRange(range);
-            console.log("onRangeMutation ", range);
         }
     }
 
@@ -141,7 +122,6 @@
         dummy.css("transform","scale("+ zoom +","+ zoom +")").css("transform-origin","0 0 0");
         dummy.css("width", range.width).css("position","absolute");
         range.style.html('.'+range.id+'{'+ dummy.attr("style")+"}");
-        if(!range.aspectRatio) updateRangeAspectRatio(range);
         range.wrapper.css("height", range.aspectRatio * range.width * zoom );
     }
 
