@@ -67,9 +67,9 @@
             range = watchRanges[i];
             if(range.query.matches){
                 currentRanges.push(range);
-                if(!range.style) createStyle( range );
+                if(!range.active) onEnterRange( range );
             }
-        }
+        }  //revissar a ver si es necesario hacer estos dos pases o si con el flag active ya no es necesario
         //previously active ranges can be out of scope
         for(i = 0; i<activeRanges.length; i++){
             range = activeRanges[i];
@@ -77,38 +77,81 @@
             if(index<0) onQuitRange(range);
         }
         activeRanges = currentRanges;
-        console.log("-MatchMedia-" )
-        console.log(activeRanges);
     }
 
 
-    var createStyle = function(range){
+    var mutations = function(range){
+
+        setTimeout(function(){
+            range.element.append("<p>hola</p>");
+        },1500);
+
+        setTimeout(function(){
+            range.element.append("<p>adios</p>");
+        },3500);
+    }
+
+
+
+    var onEnterRange = function(range){
         var str = '<style id="' + range.id + '"> </style>';
         head.append(str);
         range.style = $("#"+range.id);
         range.element.addClass(range.id);
+        range.element.wrap('<div/>');
+        range.wrapper = range.element.parent();
+        range.active = true;
+        range.mutationObserver.observe(range.element.get(0), {
+            attributes: true,
+            childList: true,
+            characterData: true,
+            subtree: true
+        });
+        mutations(range); //fake
     }
 
     var onQuitRange = function(range){
         range.style.remove();
+        range.element.unwrap();
         range.style = null;
+        range.wrapper = null;
         range.element.removeClass(range.id);
+        range.active = false;
+        range.mutationObserver.disconnect();
+    }
+
+    var onRangeMutation = function(range){
+        range.aspectRatio = 0;
+        if(range.active){
+            fitRange(range);
+            console.log("onRangeMutation ", range);
+        }
+    }
+
+    var updateRangeAspectRatio = function(range){
+        range.aspectRatio = range.element.height() / range.width;
+    }
+
+
+    var fitRange = function(range){
+        var zoom,
+            dummy = $('<div/>');
+
+        zoom = screenWidth / range.width;
+        dummy.css("transform","scale("+ zoom +","+ zoom +")").css("transform-origin","0 0 0");
+        dummy.css("width", range.width).css("position","absolute");
+        range.style.html('.'+range.id+'{'+ dummy.attr("style")+"}");
+        if(!range.aspectRatio) updateRangeAspectRatio(range);
+        range.wrapper.css("height", range.aspectRatio * range.width * zoom );
     }
 
 
     var stretch = function(){
-        var width =  $(window).width() * 1,
-            viewportWidth, range, zoom;
-        if(screenWidth != width){
+        var width =  $(window).width() * 1;
+        if(screenWidth != width ){
             screenWidth = width;
-            var dummy = $('<div/>');
             for(var i = 0; i<activeRanges.length; i++){
-                range = activeRanges[i];
-                viewportWidth  = range.units == PX ? range.viewport : emToPx(range.viewport);
-                zoom = screenWidth / viewportWidth;
-                dummy.css("transform","scale("+ zoom +","+ zoom +")").css("transform-origin","0 0 0");
-                dummy.css("width", range.viewport).css("position","absolute");
-                range.style.html('.'+range.id+'{'+ dummy.attr("style")+"}");
+                fitRange( activeRanges[i] );
             }
         }
     }
@@ -144,8 +187,7 @@
     //=========================
 
 
-
-
+    //         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 
 
@@ -160,12 +202,20 @@
             query: null,
             viewport: viewport,
             style: null,
-            units: range.units
+            wrapper: null,
+            width: range.units == PX ? viewport : emToPx(viewport),
+            aspectRatio: 0,
+            units: range.units,
+            mutationObserver: null,
+            active:false
         };
         range.query = window.matchMedia('(min-width: '+ range.bottom + range.units +') and (max-width: '+ range.top + range.units + ')');
+        range.mutationObserver = new MutationObserver( function(){ onRangeMutation(range) });
+        element.find("img").load( function(){ onRangeMutation(range) });
         watchRanges.push(range);
         range.query.addListener(onChangeRange);
     }
+
 
 
     var emToPx = function(em) {
@@ -287,7 +337,7 @@
                 });
             }
         });
-        console.log(watchRanges);
+
         $(window).bind('resize.' + SIGNATURE, stretch);
         onChangeRange();
         stretch();
