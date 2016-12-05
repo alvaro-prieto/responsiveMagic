@@ -9,10 +9,10 @@
     v1.0 - jQuery plugin created by Alvaro Prieto Lauroba.
 
 
-    Licenses:   * free for personal use
-                * $1 for commercial usages and brands (one single site license)
-                * $3 for developers, you will be able to use it in as many sites as you want (lifetime license)
-                * $10 if you want to include it in a redistributable package, such as templates, apps, etc..
+    Licenses:   * free for personal use in non-profit websites
+                * $3 for commercial usages and brands (one single site license)
+                * $5 for developers, you will be able to use it in as many sites as you want (lifetime license)
+                * $10 if you want to include it in a redistributable package, such as templates, mobile apps, etc..
                 * Any donation is extremely appreciated, I don't earn much money  :-)
 
 */
@@ -21,13 +21,15 @@
 (function($){
 
     //check if jQuery is available
-    if(!$) return setTimeout(function(){ alert("include jQuery if you want to use LET·IT·FIT"); }, 1000);
+    if(!$) return setTimeout(function(){ alert("include jQuery if you want to use Let·it·fit"); }, 1000);
 
     //const
     var INFINITE = 999999,
         SIGNATURE = "_letitfit",
         PX = "px",
-        EM = "em";
+        EM = "em",
+        META = '<meta id="meta_letitfit" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />';
+
 
     //variables
     var activeRanges = [],  //ranges currently matching a media query
@@ -136,7 +138,7 @@
         range.aspectRatio = range.element.height() / range.width;
     }
 
-    //this function stretch a range to the viewport's width
+    //this function stretch a range to the viewport width
     var fitRange = function(range){
         var zoom,
             dummy = $('<div/>');
@@ -151,7 +153,7 @@
 
     //event handler for window resize
     var onWindowResize = function(){
-        var width =  $(window).width() * 1;
+        var width = $(window).width() * 1;
         if(screenWidth != width ){
             screenWidth = width;
             for(var i = 0; i<activeRanges.length; i++){
@@ -352,9 +354,13 @@
             }
         });
 
-        $(window).bind('resize.' + SIGNATURE, onWindowResize);
-        onChangeRange();
-        onWindowResize();
+        if(watchRanges.length != 0){
+            head.prepend(META);
+            $(window).bind('resize.' + SIGNATURE, onWindowResize);
+            onChangeRange();
+            onWindowResize();
+        }
+
     }
 
     //when document is loaded, automatically launch the plugin
@@ -371,7 +377,7 @@
  *
  *  + agregar meta que prevenga el zoom
  *  + que pasa si queremos un unico rango ? (se elijen bien el bottom y el top? donde se establece la referencia target?)
- *
+ *  + posibiliad de destruir?
  *
  */
 
