@@ -375,9 +375,9 @@
 
 /* TODO:
  *
- *  + agregar meta que prevenga el zoom
  *  + que pasa si queremos un unico rango ? (se elijen bien el bottom y el top? donde se establece la referencia target?)
  *  + posibiliad de destruir?
+ *  + que coja la sensibilidad del html
  *
  */
 

@@ -8,6 +8,137 @@
         <link rel="apple-touch-icon" href="apple-touch-icon.png">
         <link rel="stylesheet" href="css/normalize.css">
         <link rel="stylesheet" href="css/main.css">
+
+
+
+
+        <style>
+            .menu-toggle {
+                background: none;
+                border: none;
+                display: inline-block;
+                padding: 0;
+                outline: none;
+                outline-offset: 0;
+                cursor: pointer;
+                -webkit-appearance: none;
+                position: fixed;
+                top: 4px;
+                left: 15px;
+                width: 24px;
+                height: 24px;
+
+            }
+
+            .menu-toggle::-moz-focus-inner {
+                border: none;
+                padding: 0;
+            }
+
+            .menu-toggle span {
+                position: relative;
+                display: block;
+                margin: auto;
+                -moz-transition: all 0.3s ease;
+                -o-transition: all 0.3s ease;
+                -webkit-transition: all 0.3s ease;
+                transition: all 0.3s ease;
+            }
+
+            .menu-toggle span:after, .menu-toggle span:before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: -4px;
+                -moz-transition: all 0.3s ease;
+                -o-transition: all 0.3s ease;
+                -webkit-transition: all 0.3s ease;
+                transition: all 0.3s ease;
+            }
+
+            .menu-toggle span:after {
+                top: 4px;
+            }
+
+            .menu-toggle span:after, .menu-toggle span:before, .menu-toggle span {
+                width: 14px;
+                height: 2px;
+                background-color: #000;
+                backface-visibility: hidden;
+                -webkit-border-radius: 2px;
+                -moz-border-radius: 2px;
+                border-radius: 2px;
+            }
+
+            .menu-toggle span {
+                -moz-transform: rotate(180deg);
+                -ms-transform: rotate(180deg);
+                -o-transform: rotate(180deg);
+                -webkit-transform: rotate(180deg);
+                transform: rotate(180deg);
+            }
+
+            .menu-toggle span:before, .menu-toggle span:after {
+                -moz-transform-origin: 1px center;
+                -ms-transform-origin: 1px center;
+                -o-transform-origin: 1px center;
+                -webkit-transform-origin: 1px center;
+                transform-origin: 1px center;
+                -moz-transform-origin: 1px center;
+                -ms-transform-origin: 1px center;
+                -o-transform-origin: 1px center;
+                -webkit-transform-origin: 1px center;
+                transform-origin: 1px center;
+            }
+
+            .menu-toggle.active span {
+                -moz-transform: rotate(360deg);
+                -ms-transform: rotate(360deg);
+                -o-transform: rotate(360deg);
+                -webkit-transform: rotate(360deg);
+                transform: rotate(360deg);
+            }
+
+            .menu-toggle.active span:before, .menu-toggle.active span:after {
+                top: 0;
+                width: 8.75px;
+            }
+
+            .menu-toggle.active span:before {
+                -webkit-transform: rotate3d(0, 0, 1, -40deg);
+                transform: rotate3d(0, 0, 1, -40deg);
+            }
+
+            .menu-toggle.active span:after {
+                -webkit-transform: rotate3d(0, 0, 1, 40deg);
+                transform: rotate3d(0, 0, 1, 40deg);
+            }
+
+
+
+
+
+
+            .bug{
+                opacity:0.5;
+                border:1px solid red;
+            }
+            .dropdown{
+                height: 0px;
+                overflow: hidden;
+                -webkit-transition: all 2s ease-in-out;
+                -moz-transition: all 2s ease-in-out;
+                -o-transition: all 2s ease-in-out;
+                transition: all 2s ease-in-out;
+
+            }
+            .dropdown.active{
+                height: 300px;
+            }
+        </style>
+
+
+
     </head>
     <body data-fit-ranges="[0-400] [600,800]" >
         <!--[if lt IE 9]>
@@ -43,7 +174,7 @@
  <div class="fila">hola 4</div>
  <div class="fila">hola 5</div>
  <div class="fila">hola 6</div>
-        <div class="fila bug" data-fit-ranfge="0-400" data-fit-sensitivity="high"><image src="/img/masqueperros.jpg"/>
+        <div class="fila bug" data-fit-ranfge="0-400" data-fit-sensitivity="normal"><image src="/img/masqueperros.jpg"/>
            <div class="colapsable">
             <h2>Clickme</h2>
             <div class="dropdown">
