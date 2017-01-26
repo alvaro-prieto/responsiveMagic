@@ -6,14 +6,16 @@
     | |  __/ |_| | |_| | | | |_
     |_|\___|\__|_|\__|_| |_|\__|
 
-    v1.0 - jQuery plugin created by Alvaro Prieto Lauroba.
+    v1.1 - jQuery plugin created by Alvaro Prieto Lauroba.
 
+    LICENSE:
 
-    Licenses:   * free for personal use in non-profit websites
-                * $3 for commercial usages and brands (one single site license)
-                * $5 for developers, you will be able to use it in as many sites as you want (lifetime license)
-                * $10 if you want to include it in a redistributable package, such as templates, mobile apps, etc..
-                * Any donation is extremely appreciated, I don't earn much money  :-)
+    - free  for personal use in non-profit websites
+    - $5    for commercial usages and brands. One single website license
+    - $10   for commercial purpose and brands. Use it in as many websites as you want (lifetime license)
+    - $15   for embedding. Use it in a redistributable package such as website templates, mobile apps, etc..
+
+    - Any donation is extremely appreciated, I don't earn much money  :-)
 
 */
 
@@ -25,9 +27,11 @@
 
     //const
     var INFINITE = 999999,
+        MAX = 2000,
         SIGNATURE = "_letitfit",
         PX = "px",
         EM = "em",
+        FIT = "fit-",
         META = '<meta id="meta_letitfit" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />';
 
 
@@ -47,6 +51,8 @@
         over: "over",
         range: "range",
         ranges: "ranges",
+        target: "target",
+        smoothing: "smoothing",
         foundation: "foundation",
         bootstrap: "bootstrap"
     };
@@ -56,6 +62,12 @@
         normal: 1,
         medium: 2,
         high: 3
+    }
+
+    //smoothing values
+    var smoothing = {
+        smooth: 1,
+        sharp: 2
     }
 
     //stardard foundation ranges
@@ -141,14 +153,17 @@
     //this function stretch a range to the viewport width
     var fitRange = function(range){
         var zoom,
-            dummy = $('<div/>');
+            dummy = $('<div/>'),
+            smooth = range.smoothing == smoothing.smooth ? 'perspective(1px) ' : '';
 
         zoom = screenWidth / range.width;
-        dummy.css("transform","scale("+ zoom +","+ zoom +")").css("transform-origin","0 0 0");
-        dummy.css("width", range.width).css("position","absolute");
+        dummy.css("transform", smooth + "scale("+ zoom +","+ zoom +")").css("transform-origin","0 0 0");
+        dummy.css("width", range.width).css({"position":"absolute", "overflow":"hidden"});
         range.style.html('.'+range.id+'{'+ dummy.attr("style")+"}");
-        if(!range.global)
+        if(!range.global){
+            updateRangeAspectRatio(range);
             range.wrapper.css("height", range.aspectRatio * range.width * zoom );
+        }
     }
 
     //event handler for window resize
@@ -202,28 +217,60 @@
 
     //parse range sensibility data-tag
     var parseSensibility = function(range){
-        var data = range.element.data("fit-sensitivity");
+        var data = range.element.data( FIT + "sensitivity" );
         if(data){
             data = $.trim(data.toString().toLowerCase());
-            switch(data){
-                case "medium" : range.sensitivity = sensitivity.medium; break;
-                case "high" : range.sensitivity = sensitivity.high; break;
-            }
+            data = sensitivity[data];
+            if(data) range.sensitivity = data;
         }
     }
 
-    //parse one single range, examples: [100,500]; 100,infinite; [30em-40em] ...
-    var parseRange = function(str){
-        var range = [];
+    //parse range smoothing data-tag
+    var parseSmoothing = function(range){
+        var data = range.element.data( FIT + "smoothing" );
+        if(data){
+            data = $.trim(data.toString().toLowerCase());
+            data = smoothing[data];
+            if(data) range.smoothing = data;
+        }else if( range.bottom === 0 && range.top == INFINITE) {
+            //default value for data-fit-target is sharp
+            range.smoothing = smoothing.sharp;
+        }
+    }
+
+    //remove units from a range (em, px), and store it as range.units
+    var cleanUnits = function(value, range){
+        range.units = PX;  //default;
+        value = value.toString().toLowerCase();
+        value = value.replace(/px/g,'');
+        if(value.indexOf(EM)>=0){
+            range.units = EM;
+            value = value.replace(/em/g,'');
+        }
+        return value;
+    }
+
+    //parse one single range, examples: [100,500]; 100,infinite; [30em-40em]; 100,500,400 ...
+    //it can contain an extra digit for the target viewport [a,b,c]
+    var parseRange = function(str, length){
+        var range = [], target, r, i, dim;
         str = cleanUnits(str, range);
         str = str.replace(/\;|\ |\-/g,',');
-        var r = str.split(",");
-        r[1] = r[1].toLowerCase().indexOf("inf") <0 ? r[1] : INFINITE;
-        r[0] *= 1; r[1] *= 1;
-        r[0] = r[0] > 2000 ? INFINITE : r[0];
-        r[1] = r[1] > 2000 ? INFINITE : r[1];
-        range[0] = Math.min(r[0], r[1]);
-        range[1] = Math.max(r[0], r[1]);
+        r = str.split(",");
+        dim = Math.min(r.length, length+1);
+        for(i=0; i<dim; i++){
+            r[i] = (r[i].indexOf("inf") <0 ? r[i] : INFINITE) * 1;
+            r[i] = r[i] > MAX ? INFINITE : r[i];
+            if(i<length){
+                range.push(r[i])
+            }else{
+                range.target = r[i];
+            }
+        }
+        if(length==2){
+            range[0] = Math.min(r[0], r[1]);
+            range[1] = Math.max(r[0], r[1]);
+        }
         return range;
     }
 
@@ -234,7 +281,7 @@
         aux = str.split("][");
         for(var i =0; i<aux.length; i++){
             range = $.trim(aux[i].toString().replace(/\[|\]|\,/g,' '));
-            range = parseRange(range);
+            range = parseRange(range, 2);
             ranges.push(range);
         }
         return ranges;
@@ -251,18 +298,6 @@
             if(value) ranges.push(value);
         }
         return parseRanges( ranges.join() );
-    }
-
-    //remove units from a range (em, px), and store it as range.units
-    var cleanUnits = function(value, range){
-        range.units = PX;  //default;
-        value = value.toString();
-        value = value.replace(/px/g,'');
-        if(value.indexOf(EM)>=0){
-            range.units = EM;
-            value = value.replace(/em/g,'');
-        }
-        return value;
     }
 
 
@@ -283,13 +318,15 @@
             units: range.units, //units: px / em
             mutationObserver: null,         //DOM manipulation observer. It is important to check for height changes
             heightObserver: null,           //daemon for height checking when sensibility is set to high
-            sensitivity: sensitivity.normal //used to specify how much resources spend to look for height-changes
+            sensitivity: sensitivity.normal, //used to specify how much resources spend to look for height-changes
+            smoothing: smoothing.smooth    //different algorithms for rendering scaled text
         };
         range.query = window.matchMedia('(min-width: '+ range.bottom + range.units +') and (max-width: '+ range.top + range.units + ')');
         if(!range.global){
             parseSensibility(range);
             createContentMutationObsever(range);
         }
+        parseSmoothing(range);
         watchRanges.push(range);
         range.query.addListener(onChangeRange);
     }
@@ -306,12 +343,13 @@
             value,
             range,
             ranges,
-            viewport;
+            viewport,
+            r;
 
         $.each(tags, function(tag, tagstr) {
             if(tags.hasOwnProperty(tag)){
-                matching = $('[data-fit-'+ tagstr +']');
-                attr = 'fit-'+tagstr;
+                matching = $('[data-'+ FIT + tagstr +']');
+                attr = FIT + tagstr;
                 matching.each(function(i,el){
                     el = $(el);
                     value = el.data(attr);
@@ -320,17 +358,25 @@
                     viewport = null;
                     switch(tag){
                         case tags.under:
-                            viewport = range[1] = cleanUnits(value, range)*1;
+                            r = parseRange(value, 1);
+                            range[1] = r[0];
+                            viewport = r.target || r[0];
                             break;
                         case tags.over:
-                            viewport = range[0] = cleanUnits(value, range)*1;
+                            r = parseRange(value, 1);
+                            range[0] = r[0];
+                            viewport = r.target || r[0];
                             break;
                         case tags.range:
-                            range = parseRange(value);
-                            viewport = range[1];
+                            r = range = parseRange(value, 2);
+                            viewport = range.target || range[1];
                             break;
                         case tags.ranges:
                             ranges = parseRanges(value);
+                            break;
+                        case tags.target:
+                            r = parseRange(value, 1);
+                            viewport = r[0];
                             break;
                         case tags.foundation:
                             ranges = parseFrameworkRanges(value, foundation);
@@ -338,15 +384,21 @@
                         case tags.bootstrap:
                             ranges = parseFrameworkRanges(value, bootstrap);
                             break;
+                        default:
+                            //data-modifiers are not real ranges
+                            return false;
                     }
                     if(ranges === null){
                         //one single range
+                        range.units = r.units;
                         createWatcher(el, range, viewport);
                     }else{
                         //multiple ranges for one single tag
                         for(var i = 0; i<ranges.length; i++){
                             range = ranges[i];
-                            viewport = range[1] == INFINITE ? range[0] : range[1];
+                            viewport = range.target ? range.target :
+                            range[1] == INFINITE ? range[0] :
+                            range[1];
                             createWatcher(el, range, viewport);
                         }
                     }
@@ -371,16 +423,10 @@
 
 
 
-
-
-/* TODO:
- *
- *  + que pasa si queremos un unico rango ? (se elijen bien el bottom y el top? donde se establece la referencia target?)
- *  + posibiliad de destruir?
- *
+/**
+ * TODO:
+ *  + sospecho que no soporta multiples elementos resizables con diferentes configuraciones
  */
-
-
 
 
 
