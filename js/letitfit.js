@@ -36,7 +36,7 @@
 
 
     //variables
-    var activeRanges = [],  //ranges currently matching a media query
+    var activeRangeWatchers = [],  //ranges currently matching a media query
         rangeWatchers = [], //all defined range watchers
         emWatchers = [],    //all defined em watchers
         screenWidth = 0;    //last screen size
@@ -99,17 +99,17 @@
 
     //this function gets fired everytime a mediaquery matches (enter/exit range)
     var onChangeRange = function(){
-        var currentRanges = [], range, i, index;
+        var currentRangeWatchers = [], watcher, i, index;
         for(i = 0; i<rangeWatchers.length; i++){
-            range = rangeWatchers[i];
-            if(range.query.matches){
-                currentRanges.push(range);
-                if(!range.active) onEnterRange( range );
-            }else if(range.active){
-                onQuitRange(range);
+            watcher = rangeWatchers[i];
+            if(watcher.query.matches){
+                currentRangeWatchers.push(watcher);
+                if(!watcher.active) onEnterRange( watcher );
+            }else if(watcher.active){
+                onQuitRange(watcher);
             }
         }
-        activeRanges = currentRanges;
+        activeRangeWatchers = currentRangeWatchers;
     }
 
     //create a style tag linked to the watcher
@@ -121,64 +121,64 @@
     }
 
     //this function gets fired when a watcher enter in its viewport range
-    var onEnterRange = function(range){
-        var parentId = range.element.attr("id") || false;
-        createStyle(range);
-        if(!range.global){
-            range.element.wrap( parentId ? '<div id="'+ parentId + SIGNATURE +'"/>' : '<div/>');
-            range.wrapper = range.element.parent();
-            if(range.sensitivity == sensitivity.medium)
-                range.mutationObserver.observe(range.element.get(0), {
+    var onEnterRange = function(watcher){
+        var parentId = watcher.element.attr("id") || false;
+        createStyle(watcher);
+        if(!watcher.global){
+            watcher.element.wrap( parentId ? '<div id="'+ parentId + SIGNATURE +'"/>' : '<div/>');
+            watcher.wrapper = watcher.element.parent();
+            if(watcher.sensitivity == sensitivity.medium)
+                watcher.mutationObserver.observe(watcher.element.get(0), {
                     attributes: true,
                     childList: true,
                     characterData: true,
                     subtree: true
                 });
         }
-        range.active = true;
-        updateRangeAspectRatio(range);
+        watcher.active = true;
+        updateAspectRatio(watcher);
     }
 
     //this function gets fired when a watcher leaves its viewport range
-    var onQuitRange = function(range){
-        range.style.remove();
-        range.style = null;
-        range.element.removeClass(range.id);
-        range.active = false;
-        if(!range.global){
-            range.element.unwrap();
-            range.wrapper = null;
-            if(range.sensitivity == sensitivity.medium)
-                range.mutationObserver.disconnect();
+    var onQuitRange = function(watcher){
+        watcher.style.remove();
+        watcher.style = null;
+        watcher.element.removeClass(watcher.id);
+        watcher.active = false;
+        if(!watcher.global){
+            watcher.element.unwrap();
+            watcher.wrapper = null;
+            if(watcher.sensitivity == sensitivity.medium)
+                watcher.mutationObserver.disconnect();
         }
     }
 
     //when the content of a range is altered, its aspect ratio has to be updated
-    var onRangeMutation = function(range){
-        if(range.active){
-            updateRangeAspectRatio(range);
-            fitRange(range);
+    var onRangeMutation = function(watcher){
+        if(watcher.active){
+            updateAspectRatio(watcher);
+            fitRange(watcher);
         }
     }
 
     //update aspect ratio
-    var updateRangeAspectRatio = function(range){
-        range.aspectRatio = range.element.height() / range.width;
+    var updateAspectRatio = function(watcher){
+        watcher.aspectRatio = watcher.element.height() / watcher.width;
     }
 
     //this function stretch a range to the viewport width
-    var fitRange = function(range){
+    var fitRange = function(watcher){
         var zoom,
             dummy = $('<div/>'),
-            smooth = range.smoothing == smoothing.smooth ? 'perspective(1px) ' : '';
+            smooth = watcher.smoothing == smoothing.smooth ? 'perspective(1px) ' : '';
 
-        zoom = screenWidth / range.width;
+        zoom = screenWidth / watcher.width;
         dummy.css("transform", smooth + "scale("+ zoom +","+ zoom +")").css("transform-origin","0 0 0");
-        dummy.css("width", range.width * range.partial).css({"position":"absolute", "overflow-x":"hidden"});
-        range.style.html('.'+range.id+'{'+ dummy.attr("style")+"}");
-        if(!range.global){
-            updateRangeAspectRatio(range);
-            range.wrapper.css("height", range.aspectRatio * range.width * zoom );
+        dummy.css("width", watcher.width * watcher.partial).css({"position":"absolute", "overflow-x":"hidden"});
+        watcher.style.html('.'+watcher.id+'{'+ dummy.attr("style")+"}");
+        if(!watcher.global){
+            updateAspectRatio(watcher);
+            watcher.wrapper.css("height", watcher.aspectRatio * watcher.width * zoom );
         }
     }
 
@@ -186,17 +186,20 @@
     //the EM value to fit the entire width (in EM mode)
     var fitEm = function(watcher){
         var dummy = $('<div/>');
-        dummy.css("font-size", screenWidth/ watcher.target);
-        watcher.style.html('.'+watcher.id+'{'+ dummy.attr("style")+"}");
+        dummy.css({
+            "font-size": screenWidth / watcher.target
+        });
+        watcher.style.html('.'+watcher.id+'{'+ dummy.attr("style")+"}" +
+                           '.'+watcher.id+ " *{max-width:100%;}");
     }
 
     //event handler for window resize
     var onWindowResize = function(){
-        var width = $(window).width() * 1, i;
+        var width = wnd.width() * 1, i;
         if(screenWidth != width ){
             screenWidth = width;
-            for(i = 0; i<activeRanges.length; i++){
-                fitRange( activeRanges[i] );
+            for(i = 0; i<activeRangeWatchers.length; i++){
+                fitRange( activeRangeWatchers[i] );
             }
             for(i = 0; i<emWatchers.length; i++){
                 fitEm( emWatchers[i] );
@@ -206,25 +209,25 @@
 
     //according the range's sensitivity factor, mutation content is implemented in different ways
     //until ResizeObserver is implemented for modern browsers this is the way to go...
-    var createContentMutationObsever = function(range){
-        if(range.sensitivity < sensitivity.high){
-            range.element.find("img").load( function(){ onRangeMutation(range) });
+    var createContentMutationObsever = function(watcher){
+        if(watcher.sensitivity < sensitivity.high){
+            watcher.element.find("img").load( function(){ onRangeMutation(watcher) });
         }
-        if(range.sensitivity == sensitivity.medium){
-            range.mutationObserver = new MutationObserver( function(){ onRangeMutation(range) });
+        if(watcher.sensitivity == sensitivity.medium){
+            watcher.mutationObserver = new MutationObserver( function(){ onRangeMutation(watcher) });
         }
-        if(range.sensitivity == sensitivity.high){
-            range.heightObserver = function(){
-                if(range.active){
-                    var ar = range.element.height() / range.width;
-                    if(ar != range.aspectRatio){
-                        range.aspectRatio = ar;
-                        fitRange(range);
+        if(watcher.sensitivity == sensitivity.high){
+            watcher.heightObserver = function(){
+                if(watcher.active){
+                    var ar = watcher.element.height() / watcher.width;
+                    if(ar != watcher.aspectRatio){
+                        watcher.aspectRatio = ar;
+                        fitRange(watcher);
                     }
                 }
-                requestAnimationFrame(range.heightObserver);
+                requestAnimationFrame(watcher.heightObserver);
             }
-            range.heightObserver();
+            watcher.heightObserver();
         }
     }
 
@@ -235,39 +238,39 @@
     };
 
     //generate unique ids for each range
-    var generateRangeId = function(){
-        if(!generateRangeId.nextId){
-            generateRangeId.nextId = 1;
+    var generateWatcherId = function(){
+        if(!generateWatcherId.nextId){
+            generateWatcherId.nextId = 1;
         }
-        return "range_" + generateRangeId.nextId++;
+        return FIT + generateWatcherId.nextId++;
     }
 
-    //parse range sensibility data-tag
-    var parseSensibility = function(range){
-        var data = range.element.data( FIT + tags.sensitivity );
+    //parse watcher sensibility data-tag
+    var parseSensibility = function(watcher){
+        var data = watcher.element.data( FIT + tags.sensitivity );
         if(data){
             data = $.trim(data.toString().toLowerCase());
             data = sensitivity[data];
-            if(data) range.sensitivity = data;
+            if(data) watcher.sensitivity = data;
         }
     }
 
-    //parse range smoothing data-tag
-    var parseSmoothing = function(range){
-        var data = range.element.data( FIT + tags.smoothing );
+    //parse watcher smoothing data-tag
+    var parseSmoothing = function(watcher){
+        var data = watcher.element.data( FIT + tags.smoothing );
         if(data){
             data = $.trim(data.toString().toLowerCase());
             data = smoothing[data];
-            if(data) range.smoothing = data;
-        }else if( range.bottom === 0 && range.top == INFINITE) {
+            if(data) watcher.smoothing = data;
+        }else if( watcher.bottom === 0 && watcher.top == INFINITE) {
             //default value for data-fit-target is sharp
-            range.smoothing = smoothing.sharp;
+            watcher.smoothing = smoothing.sharp;
         }
     }
 
     //parse element proportion if it is not full width (allowed values without units, px or %)
-    var parsePartial = function(range){
-        var value = range.element.data( FIT + tags.partial ),
+    var parsePartial = function(watcher){
+        var value = watcher.element.data( FIT + tags.partial ),
             percentage = 0;
         if(value){
             value = value.toString().toLowerCase();
@@ -278,19 +281,19 @@
             }
             value = parseFloat(value);
             if(!isNaN(value)){
-                percentage = percentage ?  value/100 : value/range.width;
-                if(percentage>0 && percentage<100) range.partial = percentage;
+                percentage = percentage ?  value/100 : value/watcher.width;
+                if(percentage>0 && percentage<100) watcher.partial = percentage;
             }
         }
     }
 
-    //remove units from a range (em, px), and store it as range.units
-    var cleanUnits = function(value, range){
-        range.units = PX;  //default;
+    //remove units from a watcher range (em, px), and store it as watcher.units
+    var cleanUnits = function(value, watcher){
+        watcher.units = PX;  //default;
         value = value.toString().toLowerCase();
         value = value.replace(/px/g,'');
         if(value.indexOf(EM)>=0){
-            range.units = EM;
+            watcher.units = EM;
             value = value.replace(/em/g,'');
         }
         return value;
@@ -349,8 +352,8 @@
 
     //this function creates range watchers
     var createRangeWatcher = function(element, range, viewport){
-        range = {
-            id: generateRangeId()+SIGNATURE,            //unique range ID
+        var watcher = {
+            id: generateWatcherId()+SIGNATURE,            //unique range ID
             global: element.prop('tagName') == 'BODY',  //is the range element the <body> tag?
             width: range.units == PX ? viewport : emToPx(viewport), //target width in pixels of the current range
             active:false,       //is range's viewport matching the current resolution?
@@ -370,22 +373,23 @@
             smoothing: smoothing.smooth    //different algorithms for rendering scaled text
 
         };
-        range.query = window.matchMedia('(min-width: '+ range.bottom + range.units +') and (max-width: '+ range.top + range.units + ')');
-        if(!range.global){
-            parseSensibility(range);
-            createContentMutationObsever(range);
+        watcher.query = window.matchMedia('(min-width: '+ watcher.bottom + watcher.units +') and (max-width: '+
+                                          watcher.top + watcher.units + ')');
+        if(!watcher.global){
+            parseSensibility(watcher);
+            createContentMutationObsever(watcher);
         }
-        parseSmoothing(range);
-        parsePartial(range);
-        rangeWatchers.push(range);
-        range.query.addListener(onChangeRange);
+        parseSmoothing(watcher);
+        parsePartial(watcher);
+        rangeWatchers.push(watcher);
+        watcher.query.addListener(onChangeRange);
     }
 
 
     //this function creates em watchers
     var createEmWatcher = function(element, target){
         var watcher = {
-                id: generateRangeId()+SIGNATURE,    //unique range ID
+                id: generateWatcherId()+SIGNATURE,    //unique range ID
                 element: element,   //DOM element in which EM units should be scaled according to the browser width
                 style: null,        //watcher's associated <style> DOM element
                 target: target      //target value to fill the entire width (100 by default)
@@ -494,7 +498,7 @@
 
         if(rangeWatchers.length || emWatchers.length){
             head.prepend(META);
-            $(window).bind('resize.' + SIGNATURE, onWindowResize);
+            wnd.bind('resize.' + SIGNATURE, onWindowResize);
             if(rangeWatchers.length) onChangeRange();
             onWindowResize();
         }
@@ -512,7 +516,6 @@
 
 /** TO-DO:
  *
- *  terminologia, cambiar range por watcher? valorar
  * soporta multiples instancias?
  *
  */
