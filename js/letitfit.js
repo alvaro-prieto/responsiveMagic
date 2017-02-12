@@ -114,8 +114,7 @@
 
     //create a style tag linked to the watcher
     var createStyle = function(watcher){
-        var str = '<style id="' + watcher.id + '"> </style>',
-            parentId = watcher.element.attr("id") || false;
+        var str = '<style id="' + watcher.id + '"> </style>';
         head.append(str);
         watcher.style = $("#"+watcher.id);
         watcher.element.addClass(watcher.id);
@@ -123,6 +122,7 @@
 
     //this function gets fired when a watcher enter in its viewport range
     var onEnterRange = function(range){
+        var parentId = range.element.attr("id") || false;
         createStyle(range);
         if(!range.global){
             range.element.wrap( parentId ? '<div id="'+ parentId + SIGNATURE +'"/>' : '<div/>');
