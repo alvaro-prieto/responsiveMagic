@@ -6,7 +6,7 @@
     | |  __/ |_| | |_| | | | |_
     |_|\___|\__|_|\__|_| |_|\__|
 
-    v1.3 - jQuery plugin created by Alvaro Prieto Lauroba.
+    v1.2 - jQuery plugin created by Alvaro Prieto Lauroba.
 
     LICENSE:
 
@@ -23,7 +23,7 @@
 (function($){
 
     //check if jQuery is available
-    if(!$) return setTimeout(function(){ alert("jQuery is required to use Letitfit"); }, MAX);
+    if(!$) return setTimeout(function(){ alert("include jQuery if you want to use Let·it·fit"); }, 1000);
 
     //const
     var INFINITE = 999999,
@@ -37,8 +37,7 @@
 
     //variables
     var activeRanges = [],  //ranges currently matching a media query
-        rangeWatchers = [], //all defined range watchers
-        emWatchers = [],    //all defined em watchers
+        watchRanges = [],   //all defined ranges
         screenWidth = 0;    //last screen size
 
     //shortcuts
@@ -58,7 +57,7 @@
         bootstrap: "bootstrap",
         partial: "partial",
         sensitivity: "sensitivity",
-        em: "em"
+        em2px: "em2Px"
     };
 
     //sensitivity to height changes
@@ -72,12 +71,6 @@
     var smoothing = {
         smooth: 1,
         sharp: 2
-    }
-
-    //resize modes
-    var mode = {
-        scale: 1,
-        em: 2
     }
 
     //stardard foundation ranges
@@ -100,8 +93,8 @@
     //this function gets fired everytime a mediaquery matches (enter/exit range)
     var onChangeRange = function(){
         var currentRanges = [], range, i, index;
-        for(i = 0; i<rangeWatchers.length; i++){
-            range = rangeWatchers[i];
+        for(i = 0; i<watchRanges.length; i++){
+            range = watchRanges[i];
             if(range.query.matches){
                 currentRanges.push(range);
                 if(!range.active) onEnterRange( range );
@@ -112,18 +105,13 @@
         activeRanges = currentRanges;
     }
 
-    //create a style tag linked to the watcher
-    var createStyle = function(watcher){
-        var str = '<style id="' + watcher.id + '"> </style>',
-            parentId = watcher.element.attr("id") || false;
-        head.append(str);
-        watcher.style = $("#"+watcher.id);
-        watcher.element.addClass(watcher.id);
-    }
-
     //this function gets fired when a watcher enter in its viewport range
     var onEnterRange = function(range){
-        createStyle(range);
+        var str = '<style id="' + range.id + '"> </style>';
+        var parentId = range.element.attr("id") || false;
+        head.append(str);
+        range.style = $("#"+range.id);
+        range.element.addClass(range.id);
         if(!range.global){
             range.element.wrap( parentId ? '<div id="'+ parentId + SIGNATURE +'"/>' : '<div/>');
             range.wrapper = range.element.parent();
@@ -182,24 +170,13 @@
         }
     }
 
-    //this function is called whenever the browser is resized and it aims to adjust
-    //the EM value to fit the entire width (in EM mode)
-    var fitEm = function(watcher){
-        var dummy = $('<div/>');
-        dummy.css("font-size", screenWidth/ watcher.target);
-        watcher.style.html('.'+watcher.id+'{'+ dummy.attr("style")+"}");
-    }
-
     //event handler for window resize
     var onWindowResize = function(){
-        var width = $(window).width() * 1, i;
+        var width = $(window).width() * 1;
         if(screenWidth != width ){
             screenWidth = width;
-            for(i = 0; i<activeRanges.length; i++){
+            for(var i = 0; i<activeRanges.length; i++){
                 fitRange( activeRanges[i] );
-            }
-            for(i = 0; i<emWatchers.length; i++){
-                fitEm( emWatchers[i] );
             }
         }
     }
@@ -348,7 +325,7 @@
 
 
     //this function creates range watchers
-    var createRangeWatcher = function(element, range, viewport){
+    var createWatcher = function(element, range, viewport){
         range = {
             id: generateRangeId()+SIGNATURE,            //unique range ID
             global: element.prop('tagName') == 'BODY',  //is the range element the <body> tag?
@@ -361,8 +338,7 @@
             style: null,        //range's associated <style> DOM element
             wrapper: null,      //placeholder wrapper (CSS transform do not alter page flow)
             aspectRatio: 0,     //block's aspect ratio
-            partial: 1,         //when element is not 100% width, specifies its size/proportion
-                                //in comparison with the target width (0 to 1)
+            partial: 1,         //when element is not 100% width, specifies its size/ratio (converted to: 0 -> 1)
             units: range.units, //units: px / em
             mutationObserver: null,         //DOM manipulation observer. It is important to check for height changes
             heightObserver: null,           //daemon for height checking when sensibility is set to high
@@ -377,40 +353,24 @@
         }
         parseSmoothing(range);
         parsePartial(range);
-        rangeWatchers.push(range);
+        watchRanges.push(range);
         range.query.addListener(onChangeRange);
-    }
-
-
-    //this function creates em watchers
-    var createEmWatcher = function(element, target){
-        var watcher = {
-                id: generateRangeId()+SIGNATURE,    //unique range ID
-                element: element,   //DOM element in which EM units should be scaled according to the browser width
-                style: null,        //watcher's associated <style> DOM element
-                target: target      //target value to fill the entire width (100 by default)
-            };
-
-        createStyle(watcher);
-        emWatchers.push(watcher);
     }
 
 
     //Init the plugin. Look for supported data-fit elements to create their corresponding watchers
     var init = function(){
         if( typeof matchMedia == 'undefined'){
-            console.warn("MATCHMEDIA ERROR: your browser doesn't support matchMedia. Use a polyfill for further compatibility");
+            console.warn('MATCHMEDIA ERROR: your browser does not support matchMedia. Use a polyfill for further compatibility');
             return;
         }
         var matching = null,
             attr = '',
-            resizeMode = mode.scale,
             value,
             range,
             ranges,
             viewport,
             r;
-
 
         $.each(tags, function(tag, tagstr) {
             if(tags.hasOwnProperty(tag)){
@@ -423,10 +383,9 @@
                     ranges = null;
                     viewport = null;
                     switch(tag){
-                        case tags.em:
-                            r = parseRange(value, 1);
-                            viewport = r[0] || 100;
-                            resizeMode = mode.em;
+                        case tags.em2px:
+                            //TO-DO y el em solo tambien
+                            return false;
                             break;
                         case tags.under:
                             r = parseRange(value, 1);
@@ -459,43 +418,28 @@
                             //data-modifiers are not real ranges
                             return false;
                     }
-
-
-                    switch(resizeMode){
-
-                        //Em mode
-                        case mode.em:
-                            createEmWatcher(el, viewport);
-                            break;
-
-
-                        //Scale mode (standard)
-                        case mode.scale:
-                            if(ranges === null){
-                                //one single range
-                                range.units = r.units;
-                                createRangeWatcher(el, range, viewport);
-                            }else{
-                                //multiple ranges for one single tag
-                                for(var i = 0; i<ranges.length; i++){
-                                    range = ranges[i];
-                                    viewport = range.target ? range.target :
-                                    range[1] == INFINITE ? range[0] :
-                                    range[1];
-                                    createRangeWatcher(el, range, viewport);
-                                }
-                            }
-                            break;
+                    if(ranges === null){
+                        //one single range
+                        range.units = r.units;
+                        createWatcher(el, range, viewport);
+                    }else{
+                        //multiple ranges for one single tag
+                        for(var i = 0; i<ranges.length; i++){
+                            range = ranges[i];
+                            viewport = range.target ? range.target :
+                            range[1] == INFINITE ? range[0] :
+                            range[1];
+                            createWatcher(el, range, viewport);
+                        }
                     }
-
                 });
             }
         });
 
-        if(rangeWatchers.length || emWatchers.length){
+        if(watchRanges.length != 0){
             head.prepend(META);
             $(window).bind('resize.' + SIGNATURE, onWindowResize);
-            if(rangeWatchers.length) onChangeRange();
+            onChangeRange();
             onWindowResize();
         }
 
@@ -512,8 +456,8 @@
 
 /** TO-DO:
  *
- *  terminologia, cambiar range por watcher? valorar
- * soporta multiples instancias?
+ * Agregar transformacion EM y EM2PX (trabajar con los em como si fuesen pixeles)
+ * Comprobar que soporta multiples instancias sin problemas
  *
  */
 
